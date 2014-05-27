@@ -1,0 +1,6 @@
+node_modules
+test/encoded
+test/encoded/*.*
+test/*.wav
+test/*.mp3
+test/*.ogg

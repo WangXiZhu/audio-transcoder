@@ -1,0 +1,27 @@
+{
+  "name": "audio-transcoder",
+  "version": "0.0.0",
+  "description": "Transcodes FLAC/WAV to various formats with simple file handling and metadata options.",
+  "main": "index.js",
+  "scripts": {
+    "test": "grunt test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://github.drewlustro.com/audio-transcoder"
+  },
+  "keywords": [
+    "flac",
+    "audio",
+    "transcode",
+    "mp3",
+    "lame"
+  ],
+  "author": "Drew Lustro",
+  "license": "ISC",
+  "dependencies": {
+    "lame": "^1.1.0",
+    "minimist": "^0.1.0",
+    "wav": "^0.1.2"
+  }
+}
