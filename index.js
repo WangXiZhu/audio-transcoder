@@ -8,79 +8,86 @@ var lame = require('lame');
 var wav = require('wav');
 var minimist = require('minimist');
 var path = require('path');
+var navcodec = require('navcodec');
 
-var minimistOptions = {
+
+var argvOptions = {
     alias: {
-        d: ['dir', 'directory', 'target-dir'],
-        o: ['output', 'output-file'],
-        b: ['bitrate'],
-        t: ['tags']
+        directory: ['d', 'dir', 'target-dir'],
+        output: ['o', 'output-file'],
+        bitrate: ['b'],
+        tags: ['t']
     },
     default: {
-        d: './',
-        o: false,
-        b: 320,
-        t: true
+        directory: './',
+        output: false,
+        bitrate: 320000,
+        tags: true
     },
-    boolean: ['t']
+    boolean: ['tags']
 };
 
-var opts = minimist(process.argv.slice(2), minimistOptions);
+var audioExtensions = {
+    mp3: '.mp3',
+    flac: '.flac',
+    wav: '.wav'
+};
 
+var opts = minimist(process.argv.slice(2), argvOptions);
 console.dir(opts);
-var inputFiles = opts['_']
-var outfileName = opts['o'];
-var targetDir = opts['d'];
-var bitrate = opts['b'];
-var useTags = opts['t'];
+
+var inputFiles = opts['_'];
+var outputFilename = opts.output;
 
 if (inputFiles.length <= 0) {
     console.error('Usage:');
     console.error('  Encode FLAC to MP3:');
-    console.error('    $ %s <infile.flac> -b <bitrate> -d <output-directory> -t', process.argv.join(' '));
+    console.error('    $ %s -b <bitrate> -d <target-directory> <infile1.flac> <infile2.flac> ...', process.argv.join(' '));
     process.exit(1);
 }
 
 console.log('Input files:', inputFiles);
 var infile,
-    basenameInfile,
+    infileBasename,
     outfile,
-    inputStream,
-    outputStream,
-    ext,
-    wavReader;
+    ext;
 
-wavReader = new wav.Reader();
 
 for (var idx in inputFiles) {
-    infile = inputFiles[idx];
-    basenameInfile = path.basename(infile, path.extname(infile)); // test/test.wav => test.mp3
-    targetFilename = outfileName === false ? (basenameInfile + '.mp3') : outfileName;
-    console.log('target dir: ' + targetDir);
-    console.log('targetFilename: ' + targetFilename);
-    outfile = path.join(targetDir, targetFilename);
-    console.log('Infile ' + idx + ': ' + infile);
-    console.log('Outfile: ' + outfile);
-    inputStream = fs.createReadStream(infile);
-    outputStream = fs.createWriteStream(outfile);
 
-    // we have to wait for the "format" event before we can start encoding
-    wavReader.on('format', onFormat);
+    (function () {
+        infile = inputFiles[idx];
+        ext = path.extname(infile);
+        infileBasename = path.basename(infile, ext); // test/test.wav => test.mp3
+        targetFilename = outputFilename === false ? (infileBasename + audioExtensions.mp3) : outputFilename;
+        outfile = path.join(opts.directory, targetFilename);
 
-    // and start transferring the data
-    inputStream.pipe(wavReader);
+        console.log('----------');
+        console.log('Infile ' + idx + ': ' + infile);
+        console.log('Outfile: ' + outfile);
+
+        navcodec.open(infile, null, function (err, media) {
+            if (media) {
+                media.addOutput(outfile, {
+                    audioBitrate: opts.bitrate
+                });
+
+                media.transcode(function (err, progress, finished, time) {
+
+                        if (finished) {
+                            console.log("Total transcoding time: " + time + "ms");
+                        }
+                        if (err) {
+                            console.log('ERROR', err);
+                            throw Error(err);
+                        }
+                });
+            }
+        });
+    })();
+
+    console.log('*** -----------');
 }
-
-// process.exit(0);
-
-function onFormat (format) {
-  console.error('WAV format: %j', format);
-  // encoding the wave file into an MP3 is as simple as calling pipe()
-  format.bitRate = opts.bitrate;
-  var encoder = new lame.Encoder(format);
-  wavReader.pipe(encoder).pipe(outputStream);
-}
-
 
 //
 // if (process.stdin.isTTY && !filename) {

@@ -4,3 +4,7 @@ test/encoded/*.*
 test/*.wav
 test/*.mp3
 test/*.ogg
+test/*.flac
+.DS_Store
+*.mp3
+*.flac
